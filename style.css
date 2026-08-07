@@ -1477,21 +1477,77 @@ html, body {
   transform: translateY(-2px);
 }
 
+/* Home Brand Row */
+.home-brand-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.brand-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.home-brand-logo {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border-color);
+}
+
+.brand-names h4 {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 0;
+}
+
+.brand-names p {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.notification-bell-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-main);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+}
+
 /* Responsive display properties */
 @media (max-width: 899px) {
+  .app-header {
+    display: none !important;
+  }
+
   .bottom-nav {
     display: flex;
   }
   
-  .app-header .tab-switcher {
-    display: none !important;
-  }
-  
   #app-container {
-    height: calc(100vh - 64px);
+    height: 100vh !important;
+    display: flex;
+    flex-direction: column;
   }
   
   #interaction-panel {
-    padding-bottom: 64px; /* offset for bottom nav bar */
+    height: calc(100vh - 64px) !important;
+    padding-bottom: 0 !important;
+    flex: 1;
+    display: flex !important;
+  }
+
+  #map-section {
+    height: calc(100vh - 64px) !important;
+    flex: 1;
   }
 }
