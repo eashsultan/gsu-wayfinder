@@ -218,7 +218,7 @@ def write_db(data: List[dict]):
 
 # FastAPI Init
 app = FastAPI(
-    title="GSU Wayfinder API",
+    title="CampusPilot AI API",
     description="Backend API for Gombe State University Campus navigator.",
     version="1.0.0"
 )
