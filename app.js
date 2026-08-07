@@ -422,8 +422,12 @@
   window.switchTab = function(tabName) {
     currentTab = tabName;
     
+    // Clear active classes from header tabs
     document.querySelectorAll(".tab-btn").forEach(btn => btn.classList.remove("active"));
+    // Clear active classes from panel views
     document.querySelectorAll(".panel-view").forEach(view => view.classList.remove("active"));
+    // Clear active classes from bottom nav items
+    document.querySelectorAll(".nav-item").forEach(item => item.classList.remove("active"));
 
     const isMobile = window.innerWidth < 900;
     if (isMobile) {
@@ -445,19 +449,89 @@
       document.getElementById("interaction-panel").style.display = "flex";
     }
 
-    if (tabName === "chat") {
-      document.getElementById("tabChat").classList.add("active");
-      document.getElementById("viewChat").classList.add("active");
-    } else if (tabName === "map") {
-      document.getElementById("tabMap").classList.add("active");
-    } else if (tabName === "list") {
-      document.getElementById("tabList").classList.add("active");
-      document.getElementById("viewList").classList.add("active");
+    // Highlight top tab switcher button
+    const topBtn = document.getElementById("tab" + tabName.charAt(0).toUpperCase() + tabName.slice(1));
+    if (topBtn) topBtn.classList.add("active");
+
+    // Highlight bottom navigation button
+    const botBtn = document.getElementById("btnNav" + tabName.charAt(0).toUpperCase() + tabName.slice(1));
+    if (botBtn) botBtn.classList.add("active");
+
+    // Show active view
+    const viewContainer = document.getElementById("view" + tabName.charAt(0).toUpperCase() + tabName.slice(1));
+    if (viewContainer) {
+      viewContainer.classList.add("active");
+    }
+
+    // Trigger actions based on active tab
+    if (tabName === "list") {
       renderPlacesList();
     } else if (tabName === "add") {
-      document.getElementById("tabAdd").classList.add("active");
-      document.getElementById("viewAdd").classList.add("active");
       renderManageList();
+    } else if (tabName === "home") {
+      renderRecentSearches();
+    }
+  };
+
+  // Recent Searches Logic
+  function getRecentSearches() {
+    try {
+      const raw = localStorage.getItem("gsu_recent_searches");
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function addRecentSearch(query, details = "Search query") {
+    if (!query) return;
+    let searches = getRecentSearches();
+    // Filter out duplicates
+    searches = searches.filter(s => s.query.toLowerCase() !== query.toLowerCase());
+    searches.unshift({ query, details, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) });
+    if (searches.length > 5) searches.pop();
+    localStorage.setItem("gsu_recent_searches", JSON.stringify(searches));
+    renderRecentSearches();
+  }
+
+  window.gsuClearRecentSearches = function() {
+    localStorage.removeItem("gsu_recent_searches");
+    renderRecentSearches();
+  };
+
+  function renderRecentSearches() {
+    const list = document.getElementById("homeRecentList");
+    if (!list) return;
+    const searches = getRecentSearches();
+    if (searches.length === 0) {
+      list.innerHTML = `<div style="text-align: center; font-size: 12px; color: var(--text-muted); padding: 12px 0;">No recent searches</div>`;
+      return;
+    }
+    list.innerHTML = searches.map(s => `
+      <div class="recent-item" onclick="window.gsuQuickSearch('${escapeHTML(s.query)}')">
+        <div class="recent-left">
+          <div class="recent-icon-pin">📍</div>
+          <div class="recent-info">
+            <h6>${escapeHTML(s.query)}</h6>
+            <p>${escapeHTML(s.details)}</p>
+          </div>
+        </div>
+        <div class="recent-right">
+          <span>${escapeHTML(s.timestamp)}</span>
+          <span>➔</span>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  window.gsuQuickSearch = function(query) {
+    if (!query) return;
+    addRecentSearch(query, "Quick search");
+    switchTab("chat");
+    const input = document.getElementById("chatInput");
+    if (input) {
+      input.value = query;
+      handleSendMessage();
     }
   };
 
@@ -810,6 +884,67 @@
         handleSendMessage();
       }
     });
+
+    // Home search submit click
+    const homeSearchBtn = document.getElementById("homeSearchBtn");
+    const homeSearchInput = document.getElementById("homeSearchInput");
+    if (homeSearchBtn && homeSearchInput) {
+      homeSearchBtn.onclick = () => {
+        const val = homeSearchInput.value.trim();
+        if (val) {
+          homeSearchInput.value = "";
+          window.gsuQuickSearch(val);
+        }
+      };
+      homeSearchInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          homeSearchBtn.click();
+        }
+      });
+    }
+
+    // Home Mic/Speech Recognition Support
+    const homeMicBtn = document.getElementById("homeMicBtn");
+    if (homeMicBtn) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (SpeechRecognition) {
+        const recognition = new SpeechRecognition();
+        recognition.continuous = false;
+        recognition.lang = 'en-US';
+        recognition.interimResults = false;
+
+        recognition.onstart = () => {
+          setStatus("Listening to your voice destination...");
+          homeMicBtn.style.background = "var(--primary)";
+          homeMicBtn.style.color = "white";
+        };
+
+        recognition.onresult = (event) => {
+          const speechToText = event.results[0][0].transcript;
+          if (homeSearchInput) {
+            homeSearchInput.value = speechToText;
+          }
+          setStatus("Speech recognized successfully.");
+        };
+
+        recognition.onerror = (e) => {
+          console.warn("Speech recognition error:", e);
+          setStatus("Speech recognition error.", true);
+        };
+
+        recognition.onend = () => {
+          homeMicBtn.style.background = "";
+          homeMicBtn.style.color = "";
+        };
+
+        homeMicBtn.onclick = () => {
+          recognition.start();
+        };
+      } else {
+        homeMicBtn.style.display = "none";
+      }
+    }
   }
 
 

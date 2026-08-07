@@ -36,17 +36,20 @@
           <svg class="moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
         </button>
         <div class="tab-switcher">
-          <button id="tabChat" class="tab-btn active" onclick="switchTab('chat')">
-            <span class="btn-text">Ask AI</span>
+          <button id="tabHome" class="tab-btn active" onclick="switchTab('home')">
+            <span class="btn-text">Home</span>
           </button>
           <button id="tabMap" class="tab-btn map-tab-btn" onclick="switchTab('map')">
             <span class="btn-text">Map</span>
+          </button>
+          <button id="tabChat" class="tab-btn" onclick="switchTab('chat')">
+            <span class="btn-text">Ask AI</span>
           </button>
           <button id="tabList" class="tab-btn" onclick="switchTab('list')">
             <span class="btn-text">Browse</span>
           </button>
           <button id="tabAdd" class="tab-btn" onclick="switchTab('add')">
-            <span class="btn-text">+ Place</span>
+            <span class="btn-text">Profile</span>
           </button>
         </div>
       </div>
@@ -74,8 +77,94 @@
       <!-- Content Views -->
       <div class="view-container">
         
+        <!-- View 0: Home Page -->
+        <div id="viewHome" class="panel-view active">
+          <div class="home-hero">
+            <div class="hero-bg-overlay"></div>
+            <div class="hero-content">
+              <h2>Hello! 👋</h2>
+              <h3>Where do you want to go today?</h3>
+              <p>Just type or speak your GSU destination.</p>
+            </div>
+          </div>
+
+          <!-- AI Search Card -->
+          <div class="home-search-card">
+            <div class="search-input-area">
+              <textarea id="homeSearchInput" placeholder="Type or speak your destination..." rows="2"></textarea>
+              <span class="example-text">Example: "Take me to Lecture Theatre 1"</span>
+              <button id="homeSearchBtn" class="send-btn-circle">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+              </button>
+            </div>
+            <div class="search-actions-row">
+              <div class="left-actions">
+                <button class="icon-action-btn" id="homeMicBtn" title="Speak">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v11m0 0a3 3 0 0 1-3-3V5a3 3 0 0 1 6 0v4a3 3 0 0 1-3 3zm0 0a7 7 0 0 0 7-7h1a8 8 0 0 1-16 0h1a7 7 0 0 0 7 7z"/></svg>
+                </button>
+                <button class="icon-action-btn" title="Keyboard">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect><line x1="6" y1="8" x2="6" y2="8"></line><line x1="10" y1="8" x2="10" y2="8"></line><line x1="14" y1="8" x2="14" y2="8"></line><line x1="18" y1="8" x2="18" y2="8"></line><line x1="6" y1="12" x2="6" y2="12"></line><line x1="10" y1="12" x2="10" y2="12"></line><line x1="14" y1="12" x2="14" y2="12"></line><line x1="18" y1="12" x2="18" y2="12"></line><line x1="7" y1="16" x2="17" y2="16"></line></svg>
+                </button>
+              </div>
+              <div class="smart-mode-badge">
+                <span>✨ Smart Mode</span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- Popular Searches -->
+          <div class="section-container">
+            <div class="section-header">
+              <h4>Popular Searches</h4>
+              <a href="#" onclick="switchTab('list')">See all</a>
+            </div>
+            <div class="popular-grid">
+              <div class="popular-item-card" onclick="window.gsuQuickSearch('Lecture Theatre 1')">
+                <span class="icon">🎓</span>
+                <span class="label">LT1</span>
+              </div>
+              <div class="popular-item-card" onclick="window.gsuQuickSearch('University Central Library')">
+                <span class="icon">📖</span>
+                <span class="label">Central Library</span>
+              </div>
+              <div class="popular-item-card" onclick="window.gsuQuickSearch('Senate Building')">
+                <span class="icon">🏛️</span>
+                <span class="label">Senate Building</span>
+              </div>
+              <div class="popular-item-card" onclick="window.gsuQuickSearch('Faculty of Science Complex')">
+                <span class="icon">🧪</span>
+                <span class="label">Science Complex</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Explore Campus Map Banner -->
+          <div class="explore-map-banner" onclick="switchTab('map')">
+            <div class="banner-text">
+              <h5>Explore Campus Map</h5>
+              <p>Browse campus locations and find places easily.</p>
+              <button class="view-map-btn">View Map 📍</button>
+            </div>
+            <div class="banner-img">
+              <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="1.5" opacity="0.85"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"></polygon><line x1="9" y1="3" x2="9" y2="18"></line><line x1="15" y1="6" x2="15" y2="21"></line></svg>
+            </div>
+          </div>
+
+          <!-- Recent Searches -->
+          <div class="section-container">
+            <div class="section-header">
+              <h4>Recent Searches</h4>
+              <a href="#" onclick="window.gsuClearRecentSearches()">Clear</a>
+            </div>
+            <div class="recent-list" id="homeRecentList">
+              <!-- Dynamically populated recent searches -->
+            </div>
+          </div>
+        </div>
+
         <!-- View 1: Chat Assistant -->
-        <div id="viewChat" class="panel-view active">
+        <div id="viewChat" class="panel-view">
           <div class="chat-wrapper">
             <div id="chatHistory" class="chat-history">
               <div class="assistant-welcome">
@@ -192,7 +281,31 @@
 
   </div>
 
-  <!-- API Key Modal -->
+  <!-- Bottom Navigation Bar for Mobile -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" id="btnNavHome" onclick="switchTab('home')">
+      <svg class="nav-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+      <span class="nav-label">Home</span>
+    </button>
+    <button class="nav-item" id="btnNavMap" onclick="switchTab('map')">
+      <svg class="nav-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 8 3 15 6 23 3 23 18 15 21 8 18 1 21"></polygon><line x1="8" y1="3" x2="8" y2="18"></line><line x1="15" y1="6" x2="15" y2="21"></line></svg>
+      <span class="nav-label">Map</span>
+    </button>
+    <button class="nav-item chat-nav-btn" id="btnNavChat" onclick="switchTab('chat')">
+      <div class="nav-icon-circle">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+      </div>
+      <span class="nav-label">Ask AI</span>
+    </button>
+    <button class="nav-item" id="btnNavList" onclick="switchTab('list')">
+      <svg class="nav-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+      <span class="nav-label">Locations</span>
+    </button>
+    <button class="nav-item" id="btnNavAdd" onclick="switchTab('add')">
+      <svg class="nav-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+      <span class="nav-label">Profile</span>
+    </button>
+  </nav>
 
   <!-- Leaflet and App Scripts -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
