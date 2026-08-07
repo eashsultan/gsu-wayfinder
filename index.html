@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>GSU Wayfinder — Gombe State University Campus Guide & Navigator</title>
+  <meta name="description" content="Find lecture halls, departments, offices, hostels, clinics, and spots around Gombe State University campus with interactive directions and chat assistance.">
+  
+  <!-- CSS Stylesheets -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
+  <link rel="stylesheet" href="style.css?v=5" />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body class="light-mode">
+  <div id="app-container">
+    
+    <!-- Top Nav Header -->
+    <header class="app-header">
+      <div class="brand">
+        <div class="logo-wrapper">
+          <img src="gsu_logo.png" alt="GSU Logo" class="gsu-logo" />
+        </div>
+        <div class="brand-text">
+          <h1>GSU Wayfinder</h1>
+          <p>Gombe State University Campus Directory</p>
+        </div>
+      </div>
+      
+      <div class="nav-controls">
+        <button id="themeToggle" class="control-btn" aria-label="Toggle Theme">
+          <svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+          <svg class="moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </button>
+        <div class="tab-switcher">
+          <button id="tabChat" class="tab-btn active" onclick="switchTab('chat')">
+            <span class="btn-text">Ask AI</span>
+          </button>
+          <button id="tabMap" class="tab-btn map-tab-btn" onclick="switchTab('map')">
+            <span class="btn-text">Map</span>
+          </button>
+          <button id="tabList" class="tab-btn" onclick="switchTab('list')">
+            <span class="btn-text">Browse</span>
+          </button>
+          <button id="tabAdd" class="tab-btn" onclick="switchTab('add')">
+            <span class="btn-text">+ Place</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Map Viewport -->
+    <section id="map-section">
+      <div id="map"></div>
+    </section>
+
+    <!-- Status Info Bar -->
+    <div id="statusBar" class="status-bar">
+      <span class="status-dot"></span>
+      <span class="status-text" id="statusMessage">Initializing map and campus directory...</span>
+    </div>
+
+    <!-- Interactive Navigation Panel -->
+    <main id="interaction-panel">
+      
+      <!-- Category Quick Filter Chips -->
+      <div class="category-chips-row" id="chipsContainer">
+        <!-- Generated Dynamically -->
+      </div>
+
+      <!-- Content Views -->
+      <div class="view-container">
+        
+        <!-- View 1: Chat Assistant -->
+        <div id="viewChat" class="panel-view active">
+          <div class="chat-wrapper">
+            <div id="chatHistory" class="chat-history">
+              <div class="assistant-welcome">
+                <div class="avatar">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                  </svg>
+                </div>
+                <h3>GSU Campus Guide</h3>
+                <p>Hello! I can help you find lecture halls, offices, hostels, food joints, libraries, or toilets on the Gombe State University campus. Just ask me!</p>
+                <div class="suggestion-bubbles">
+                  <button class="suggest-btn" onclick="sendSuggestion('Where is the Faculty of Science?')">🔍 Faculty of Science</button>
+                  <button class="suggest-btn" onclick="sendSuggestion('Find a lecture theatre')">📖 Lecture Theatres</button>
+                  <button class="suggest-btn" onclick="sendSuggestion('Where can I get lunch?')">🍔 Restaurant / Food</button>
+                  <button class="suggest-btn" onclick="sendSuggestion('Where is the University Library?')">📚 Library</button>
+                </div>
+              </div>
+            </div>
+            <div class="chat-input-bar">
+              <input type="text" id="chatInput" placeholder="Ask e.g. Where is the Senate Building?" autocomplete="off" />
+              <button id="chatSendBtn" aria-label="Send Message">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="22" y1="2" x2="11" y2="13"></line>
+                  <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- View 2: Browse Locations List -->
+        <div id="viewList" class="panel-view">
+          <div class="search-filter-box">
+            <input type="text" id="listSearchInput" placeholder="Search by name, description, or category..." />
+            <span class="search-icon">🔍</span>
+          </div>
+          <div id="placesList" class="places-list">
+            <!-- Dynamic list items -->
+          </div>
+        </div>
+
+        <!-- View 3: Add New Place Form -->
+        <div id="viewAdd" class="panel-view">
+          <form id="addPlaceForm" onsubmit="event.preventDefault();">
+            <div class="form-instructions">
+              <strong>Pin a new campus location:</strong> Mark classrooms, laboratories, offices, or student services. Enter details below or select a spot directly on the map.
+            </div>
+            
+            <div class="form-group">
+              <label for="pName">Name / Title <span class="required">*</span></label>
+              <input type="text" id="pName" placeholder="e.g. ETF Lecture Hall 1" required />
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="pCategory">Category <span class="required">*</span></label>
+                <select id="pCategory" required>
+                  <option value="Lecture Theatre">Lecture Theatre</option>
+                  <option value="Office">Office / Department</option>
+                  <option value="Clinic">Clinic / Health</option>
+                  <option value="Restaurant">Restaurant / Food</option>
+                  <option value="Hostel">Hostel</option>
+                  <option value="Library">Library</option>
+                  <option value="Bank/ATM">Bank / ATM</option>
+                  <option value="Sports">Sports / Rec</option>
+                  <option value="Other">Other Location</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="pDesc">Short Description</label>
+              <textarea id="pDesc" rows="2" placeholder="Describe the place or what students can find here..."></textarea>
+            </div>
+
+            <div class="form-group">
+              <label for="pDirections">Directions / How to get there</label>
+              <textarea id="pDirections" rows="2" placeholder="e.g. Next to the Faculty of Science, behind the old lab building..."></textarea>
+            </div>
+
+            <div class="map-picker-status" id="mapPickerStatus">
+              <button type="button" class="pick-map-btn" id="btnPickOnMap">
+                <span>📍 Pick Location on Map</span>
+              </button>
+            </div>
+
+            <div class="form-row coordinates-row">
+              <div class="form-group">
+                <label for="pLat">Latitude <span class="required">*</span></label>
+                <input type="number" step="any" id="pLat" placeholder="10.3042" required />
+              </div>
+              <div class="form-group">
+                <label for="pLng">Longitude <span class="required">*</span></label>
+                <input type="number" step="any" id="pLng" placeholder="11.1728" required />
+              </div>
+            </div>
+
+            <button type="submit" class="submit-btn" id="btnSubmitPlace">
+              <span>Save Place to Campus Directory</span>
+            </button>
+
+            <!-- Collapsible Management Panel -->
+            <details class="manage-details">
+              <summary>Manage Saved Locations</summary>
+              <div class="manage-list" id="manageListContainer">
+                <!-- Dynamically loaded places for deletion/edit -->
+              </div>
+            </details>
+          </form>
+        </div>
+
+      </div>
+    </main>
+
+  </div>
+
+  <!-- API Key Modal -->
+
+  <!-- Leaflet and App Scripts -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+  <script src="app.js?v=5"></script>
+</body>
+</html>
