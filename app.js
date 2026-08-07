@@ -1033,7 +1033,7 @@
 
   function escapeJSArg(str) {
     if (!str) return "";
-    return str.replace(/'/g, "\\'").replace(/"/g, '\\"');
+    return str.replace(/'/g, "\\\\'").replace(/"/g, '\\\\"');
   }
 
 })();
