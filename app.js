@@ -388,7 +388,7 @@
           <p style="margin: 4px 0 8px; font-size: 12px; color: var(--text-muted); line-height: 1.4;">${escapeHTML(p.description || "No description provided.")}</p>
           ${p.directions ? `<div style="border-top: 1px dashed var(--border-color); padding: 6px 0; font-size: 11.5px; line-height: 1.4; color: var(--text-muted);">🧭 <b>Directions:</b> ${escapeHTML(p.directions)}</div>` : ''}
           <div style="display: flex; gap: 6px; margin-top: 8px; border-top: 1px solid var(--border-color); padding-top: 8px;">
-            <button onclick="window.gsuDrawRoute(${p.lat}, ${p.lng}, '${escapeHTML(p.name)}', '${escapeHTML(p.directions || p.description || '')}')" style="flex: 1; border: none; background: #008751; color: white; padding: 6px; border-radius: 4px; font-family: var(--font-body); font-size: 11px; cursor: pointer; font-weight: 600; text-align: center;">🧭 Route</button>
+            <button onclick="window.gsuDrawRoute(${p.lat}, ${p.lng}, '${escapeJSArg(p.name)}', '${escapeJSArg(p.directions || p.description || '')}')" style="flex: 1; border: none; background: #008751; color: white; padding: 6px; border-radius: 4px; font-family: var(--font-body); font-size: 11px; cursor: pointer; font-weight: 600; text-align: center;">🧭 Route</button>
             <button onclick="window.gsuClearRoute()" style="border: 1px solid var(--border-color); background: transparent; color: var(--text-muted); padding: 6px; border-radius: 4px; font-family: var(--font-body); font-size: 11px; cursor: pointer; font-weight: 600; text-align: center;">Clear</button>
           </div>
         </div>
@@ -508,7 +508,7 @@
       return;
     }
     list.innerHTML = searches.map(s => `
-      <div class="recent-item" onclick="window.gsuQuickSearch('${escapeHTML(s.query)}')">
+      <div class="recent-item" onclick="window.gsuQuickSearch('${escapeJSArg(s.query)}')">
         <div class="recent-left">
           <div class="recent-icon-pin">📍</div>
           <div class="recent-info">
@@ -1029,6 +1029,11 @@
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&#039;");
+  }
+
+  function escapeJSArg(str) {
+    if (!str) return "";
+    return str.replace(/'/g, "\\'").replace(/"/g, '\\"');
   }
 
 })();
