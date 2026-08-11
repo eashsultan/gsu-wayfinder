@@ -128,28 +128,229 @@
   let currentTab = "chat";
   let activeCategoryFilter = null;
   let map = null;
-  let markersGroup = null;
+  let mapBooted = false;
+  let mapResizeTimer = null;
   let pickModeActive = false;
-  let currentMarker = null;
   let currentMapCenter = [...CAMPUS_CENTER];
-  let focusedMarker = null;
   let serverHasGeminiKey = false;
-  let routingLayer = null;
-  let userLocationMarker = null;
   let voiceEnabled = true;
+  let currentUser = null;
 
   // ---------- Initialization ----------
   window.addEventListener("DOMContentLoaded", () => {
     initTheme();
-    initMap();
     loadPlaces();
     setupEventListeners();
     renderChips();
     if (window.innerWidth < 900) {
       document.getElementById("map-section").style.display = "none";
     }
-    switchTab("chat");
+    
+    // Auth check on startup
+    const storedUser = GSU.getStoredUser();
+    if (storedUser && GSU.isAuthenticated()) {
+      currentUser = storedUser;
+      enterApplication(currentUser);
+    } else {
+      GSU.clearSession();
+      showLandingPage();
+    }
   });
+
+  // ---------- Authentication UI Helpers ----------
+  function showLandingPage() {
+    document.getElementById("landing-page").style.display = "block";
+    document.getElementById("auth-page").style.display = "none";
+    document.getElementById("app-container").style.display = "none";
+    document.querySelector(".bottom-nav").style.display = "none";
+  }
+  window.showLandingPage = showLandingPage;
+
+  function showAuthScreen(mode = "login") {
+    document.getElementById("landing-page").style.display = "none";
+    document.getElementById("auth-page").style.display = "flex";
+    document.getElementById("app-container").style.display = "none";
+    document.querySelector(".bottom-nav").style.display = "none";
+    toggleAuthTab(mode);
+  }
+  window.showAuthScreen = showAuthScreen;
+
+  function toggleAuthTab(mode) {
+    const loginWrap = document.getElementById("login-form-wrap");
+    const regWrap = document.getElementById("register-form-wrap");
+    if (mode === "login") {
+      loginWrap.style.display = "block";
+      regWrap.style.display = "none";
+    } else {
+      loginWrap.style.display = "none";
+      regWrap.style.display = "block";
+    }
+  }
+  window.toggleAuthTab = toggleAuthTab;
+
+  function showAuthError(message) {
+    const banner = document.getElementById("auth-error-banner");
+    if (banner) {
+      banner.textContent = message;
+      banner.classList.add("show");
+      setTimeout(() => banner.classList.remove("show"), 5000);
+    }
+  }
+
+  function enterApplication(user) {
+    currentUser = user;
+    GSU.setSession(GSU.getToken(), user);
+    
+    // Update display values
+    const hour = new Date().getHours();
+    let greeting = "Good morning 👋";
+    if (hour >= 12 && hour < 17) {
+      greeting = "Good afternoon 👋";
+    } else if (hour >= 17) {
+      greeting = "Good evening 👋";
+    }
+    
+    const welcomeGreet = document.getElementById("homeWelcomeGreeting");
+    if (welcomeGreet) {
+      welcomeGreet.textContent = greeting;
+    }
+    
+    document.getElementById("profileName").textContent = user.name;
+    document.getElementById("profileRoleBadge").textContent = user.role === "class_rep" ? "Class Representative" : "Student";
+    document.getElementById("profileRoleBadge").className = `profile-role-badge ${user.role}`;
+    document.getElementById("profileID").textContent = user.student_id;
+    document.getElementById("profileEmail").textContent = user.email;
+    document.getElementById("profileFaculty").textContent = user.faculty;
+    document.getElementById("profileDept").textContent = user.department;
+    document.getElementById("profileLevel").textContent = `${user.level} Level`;
+    
+    // Show editors only to class reps/admins
+    const repEditor = document.getElementById("classRepPlaceEditor");
+    if (repEditor) {
+      repEditor.style.display = (user.role === "class_rep" || user.role === "admin") ? "block" : "none";
+    }
+
+    // Toggle main app views
+    document.getElementById("landing-page").style.display = "none";
+    document.getElementById("auth-page").style.display = "none";
+    document.getElementById("app-container").style.display = "block";
+    if (window.innerWidth < 900) {
+      document.querySelector(".bottom-nav").style.display = "flex";
+    }
+
+    switchTab("home");
+    // Boot the map only now that the app container is visible,
+    // so the Mapbox canvas gets real dimensions.
+    initMap().then(() => {
+      if (window.StudentViews) StudentViews.init();
+      setTimeout(() => {
+        if (map) map.invalidateSize();
+      }, 250);
+    });
+  }
+
+  async function handleUserLogin() {
+    const identity = document.getElementById("login_identity").value.trim();
+    const pass = document.getElementById("login_password").value;
+    
+    if (!identity || !pass) {
+      showAuthError("Please fill in all fields.");
+      return;
+    }
+    
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email_or_id: identity, password: pass })
+      });
+      
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.detail || "Login failed");
+      }
+      
+      const data = await res.json();
+      GSU.setSession(data.token, data.user);
+      enterApplication(data.user);
+      document.getElementById("loginForm").reset();
+    } catch (e) {
+      showAuthError(e.message);
+    }
+  }
+  window.handleUserLogin = handleUserLogin;
+
+  async function handleUserRegister() {
+    const name = document.getElementById("reg_name").value.trim();
+    const student_id = document.getElementById("reg_student_id").value.trim();
+    const email = document.getElementById("reg_email").value.trim();
+    const faculty = document.getElementById("reg_faculty").value;
+    const department = document.getElementById("reg_dept").value.trim();
+    const level = document.getElementById("reg_level").value;
+    const role = document.getElementById("reg_role").value || "student";
+    const password = document.getElementById("reg_password").value;
+    
+    if (!name || !student_id || !email || !department || !password) {
+      showAuthError("All fields are required.");
+      return;
+    }
+    if (password.length < 6) {
+      showAuthError("Password must be at least 6 characters.");
+      return;
+    }
+    
+    try {
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, student_id, email, faculty, department, level, role, password })
+      });
+      
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.detail || "Registration failed");
+      }
+      
+      const data = await res.json();
+      GSU.setSession(data.token, data.user);
+      currentUser = data.user;
+      enterApplication(data.user);
+      document.getElementById("registerForm").reset();
+      switchTab("home");
+    } catch (e) {
+      showAuthError(e.message);
+    }
+  }
+  window.handleUserRegister = handleUserRegister;
+
+  function handleUserLogout() {
+    const token = GSU.getToken();
+    if (token) {
+      fetch("/api/auth/logout", {
+        method: "POST",
+        headers: { Authorization: "Bearer " + token }
+      }).catch(() => {});
+    }
+    currentUser = null;
+    GSU.clearSession();
+    showLandingPage();
+  }
+  window.handleUserLogout = handleUserLogout;
+
+  // Register account-type tabs
+  function wireAccountTypeTabs() {
+    const tabs = document.querySelectorAll(".auth-type-btn");
+    const hiddenRole = document.getElementById("reg_role");
+    if (!tabs.length || !hiddenRole) return;
+    tabs.forEach(btn => {
+      btn.onclick = () => {
+        tabs.forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        hiddenRole.value = btn.dataset.role || "student";
+      };
+    });
+  }
+  window.addEventListener("DOMContentLoaded", wireAccountTypeTabs);
 
   // ---------- Theme Switcher (Dark/Light) ----------
   function initTheme() {
@@ -233,94 +434,53 @@
 
   // ---------- Map Framework Integration ----------
   function initMap() {
+    if (mapBooted) return Promise.resolve(map);
+    mapBooted = true;
+
     const GSU_BOUNDS = [
       [10.2940, 11.1600], // Southwest boundary (expanded safely)
       [10.3140, 11.1860]  // Northeast boundary (expanded safely)
     ];
 
-    map = L.map("map", {
-      zoomControl: true,
-      attributionControl: true,
-      maxBounds: GSU_BOUNDS,
-      maxBoundsViscosity: 1.0,
+    return MapEngine.init("map", {
+      bounds: GSU_BOUNDS,
+      center: CAMPUS_CENTER,
+      zoom: 16,
       minZoom: 15,
-      maxZoom: 19,
-      dragging: false,
-      keyboard: false,
-      scrollWheelZoom: 'center',
-      doubleClickZoom: 'center',
-      touchZoom: 'center'
-    }).setView(CAMPUS_CENTER, 16);
+      maxZoom: 19
+    }).then((engine) => {
+      map = engine;
 
-    // Define Base Map Layers
-    const streetMap = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 19,
-      minZoom: 15,
-      attribution: '&copy; <a href="https://openstreetmap.org">OpenStreetMap</a> contributors'
-    });
+      // Click event for selecting coordinates
+      map.on("click", (e) => {
+        if (pickModeActive) {
+          const { lat, lng } = e.latlng;
+          document.getElementById("pLat").value = lat.toFixed(6);
+          document.getElementById("pLng").value = lng.toFixed(6);
 
-    const satelliteMap = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
-      maxZoom: 19,
-      minZoom: 15,
-      attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
-    });
+          // Show temporary marker on map
+          setTemporaryPickerMarker(lat, lng);
+          setPickMode(false);
+          setStatus(`Coordinates picked: ${lat.toFixed(5)}, ${lng.toFixed(5)}`);
+        }
+      });
 
-    // Add default street view to map
-    streetMap.addTo(map);
-
-    // Setup Layer Control Toggle
-    const baseMaps = {
-      "🗺️ Street Map": streetMap,
-      "🛰️ Satellite Map": satelliteMap
-    };
-    L.control.layers(baseMaps, null, { position: 'topright' }).addTo(map);
-
-    markersGroup = L.layerGroup().addTo(map);
-    routingLayer = L.featureGroup().addTo(map);
-
-    // Click event for selecting coordinates
-    map.on("click", (e) => {
-      if (pickModeActive) {
-        const { lat, lng } = e.latlng;
-        document.getElementById("pLat").value = lat.toFixed(6);
-        document.getElementById("pLng").value = lng.toFixed(6);
-        
-        // Show temporary marker on map
-        setTemporaryPickerMarker(lat, lng);
-        setPickMode(false);
-        setStatus(`Coordinates picked: ${lat.toFixed(5)}, ${lng.toFixed(5)}`);
+      // If places already loaded while the engine was booting, draw them now
+      if (places.length) {
+        renderMapMarkers();
       }
+    }).catch((err) => {
+      console.error("Map initialization failed:", err);
     });
   }
 
   function setTemporaryPickerMarker(lat, lng) {
-    if (currentMarker) {
-      map.removeLayer(currentMarker);
-    }
-    
-    currentMarker = L.marker([lat, lng], {
-      draggable: true,
-      icon: createMarkerIcon("#2F6E4E", true)
-    }).addTo(map);
-
-    currentMarker.bindPopup("<b>New Draft Spot</b><br>Drag me or fill the form to save.").openPopup();
-
-    currentMarker.on("dragend", function(event) {
-      const marker = event.target;
-      const position = marker.getLatLng();
-      document.getElementById("pLat").value = position.lat.toFixed(6);
-      document.getElementById("pLng").value = position.lng.toFixed(6);
-    });
-  }
-
-  function createMarkerIcon(color, isActive = false) {
-    const html = `<div class="marker-pin ${isActive ? 'active' : ''}" style="background-color: ${color};"></div>`;
-    return L.divIcon({
-      html: html,
-      className: 'custom-map-marker',
-      iconSize: [28, 28],
-      iconAnchor: [14, 28],
-      popupAnchor: [0, -26]
+    map.setPicker(lat, lng, {
+      popupHTML: "<b>New Draft Spot</b><br>Drag me or fill the form to save.",
+      onDrag: (dlat, dlng) => {
+        document.getElementById("pLat").value = dlat.toFixed(6);
+        document.getElementById("pLng").value = dlng.toFixed(6);
+      }
     });
   }
 
@@ -357,30 +517,24 @@
   };
 
   window.gsuClearRoute = () => {
-    if (routingLayer) {
-      routingLayer.clearLayers();
-    }
-    if (userLocationMarker) {
-      map.removeLayer(userLocationMarker);
-      userLocationMarker = null;
+    if (map) {
+      map.clearRoute();
+      map.clearUser();
     }
     window.speechSynthesis.cancel();
     setStatus("Route cleared.");
   };
 
   function renderMapMarkers() {
-    markersGroup.clearLayers();
-    
+    if (!map) return;
+    map.clearMarkers();
+
     const visiblePlaces = activeCategoryFilter
       ? places.filter(p => p.category === activeCategoryFilter)
       : places;
 
     visiblePlaces.forEach(p => {
       const color = CAT_COLORS[p.category] || "#64748B";
-      const marker = L.marker([p.lat, p.lng], {
-        icon: createMarkerIcon(color)
-      });
-
       const popupContent = `
         <div style="font-family: var(--font-body); min-width: 200px; padding: 4px;">
           <span style="font-family: var(--font-mono); font-size: 9px; font-weight: 700; color: ${color}; text-transform: uppercase; letter-spacing: 0.5px;">${p.category}</span>
@@ -394,9 +548,12 @@
         </div>
       `;
 
-      marker.bindPopup(popupContent);
-      marker.addTo(markersGroup);
-      p._marker = marker;
+      p._marker = map.addMarker({
+        lat: p.lat,
+        lng: p.lng,
+        color,
+        popupHTML: popupContent
+      });
     });
   }
 
@@ -419,9 +576,16 @@
   }
 
   // ---------- Navigation Panel & Tabs UI ----------
+  const PANEL_TABS = { home: true, classes: true, venues: true, profile: true };
+
   window.switchTab = function(tabName) {
     currentTab = tabName;
     
+    // Close any open overlays/sheets
+    closeChat();
+    closePlacesOverlay();
+    closeVenueDetail();
+
     // Clear active classes from header tabs
     document.querySelectorAll(".tab-btn").forEach(btn => btn.classList.remove("active"));
     // Clear active classes from panel views
@@ -447,31 +611,118 @@
     } else {
       document.getElementById("map-section").style.display = "block";
       document.getElementById("interaction-panel").style.display = "flex";
+      if (tabName === "map" && map) {
+        setTimeout(() => { map.invalidateSize(); }, 200);
+      }
     }
 
     // Highlight top tab switcher button
-    const topBtn = document.getElementById("tab" + tabName.charAt(0).toUpperCase() + tabName.slice(1));
+    const cap = tabName.charAt(0).toUpperCase() + tabName.slice(1);
+    const topBtn = document.getElementById("tab" + cap);
     if (topBtn) topBtn.classList.add("active");
 
     // Highlight bottom navigation button
-    const botBtn = document.getElementById("btnNav" + tabName.charAt(0).toUpperCase() + tabName.slice(1));
+    const botBtn = document.getElementById("btnNav" + cap);
     if (botBtn) botBtn.classList.add("active");
 
-    // Show active view
-    const viewContainer = document.getElementById("view" + tabName.charAt(0).toUpperCase() + tabName.slice(1));
-    if (viewContainer) {
-      viewContainer.classList.add("active");
+    // Show active panel view (only for panel-backed tabs)
+    if (PANEL_TABS[tabName]) {
+      const viewContainer = document.getElementById("view" + cap);
+      if (viewContainer) viewContainer.classList.add("active");
     }
 
     // Trigger actions based on active tab
-    if (tabName === "list") {
-      renderPlacesList();
-    } else if (tabName === "add") {
-      renderManageList();
-    } else if (tabName === "home") {
+    if (tabName === "home") {
       renderRecentSearches();
+      if (window.StudentViews) StudentViews.renderNextClass();
+    } else if (tabName === "classes") {
+      if (window.StudentViews) StudentViews.renderClasses();
+    } else if (tabName === "venues") {
+      if (window.StudentViews) StudentViews.renderVenues();
+    } else if (tabName === "profile") {
+      renderManageList();
     }
   };
+
+  // ---------- Overlays (chat / places / venue sheet) ----------
+  const chatOverlay = document.getElementById("viewChat");
+  const placesOverlay = document.getElementById("viewList");
+
+  function openChat(initialMessage) {
+    if (!chatOverlay) return;
+    chatOverlay.classList.add("open");
+    chatOverlay.setAttribute("aria-hidden", "false");
+    if (initialMessage) {
+      const input = document.getElementById("chatInput");
+      if (input) input.value = initialMessage;
+      handleSendMessage();
+    }
+    setTimeout(() => {
+      const input = document.getElementById("chatInput");
+      if (input && input.value) input.focus();
+    }, 250);
+  }
+  window.openChat = openChat;
+
+  function closeChat() {
+    if (!chatOverlay) return;
+    chatOverlay.classList.remove("open");
+    chatOverlay.setAttribute("aria-hidden", "true");
+  }
+  window.closeChat = closeChat;
+
+  function openPlacesOverlay() {
+    if (!placesOverlay) return;
+    placesOverlay.classList.add("open");
+    placesOverlay.setAttribute("aria-hidden", "false");
+    switchTab("map");
+    renderPlacesChips();
+    renderPlacesList();
+  }
+  window.openPlacesOverlay = openPlacesOverlay;
+
+  function closePlacesOverlay() {
+    if (!placesOverlay) return;
+    placesOverlay.classList.remove("open");
+    placesOverlay.setAttribute("aria-hidden", "true");
+  }
+  window.closePlacesOverlay = closePlacesOverlay;
+
+  function closeVenueDetail() {
+    const el = document.getElementById("venueDetailOverlay");
+    if (el) el.style.display = "none";
+    document.body.classList.remove("sheet-open");
+  }
+  window.closeVenueDetail = closeVenueDetail;
+
+  function renderPlacesChips() {
+    const container = document.getElementById("placesChips");
+    if (!container) return;
+    container.innerHTML = "";
+    const allChip = document.createElement("button");
+    allChip.className = `chip-btn ${activeCategoryFilter === null ? "active" : ""}`;
+    allChip.textContent = "🌍 Show All";
+    allChip.onclick = () => {
+      activeCategoryFilter = null;
+      renderAll();
+      renderPlacesList();
+      renderPlacesChips();
+    };
+    container.appendChild(allChip);
+
+    CATEGORIES.forEach(cat => {
+      const btn = document.createElement("button");
+      btn.className = `chip-btn ${activeCategoryFilter === cat ? "active" : ""}`;
+      btn.textContent = cat;
+      btn.onclick = () => {
+        activeCategoryFilter = (activeCategoryFilter === cat) ? null : cat;
+        renderAll();
+        renderPlacesList();
+        renderPlacesChips();
+      };
+      container.appendChild(btn);
+    });
+  }
 
   // Recent Searches Logic
   function getRecentSearches() {
@@ -527,17 +778,16 @@
   window.gsuQuickSearch = function(query) {
     if (!query) return;
     addRecentSearch(query, "Quick search");
-    switchTab("chat");
-    const input = document.getElementById("chatInput");
-    if (input) {
-      input.value = query;
-      handleSendMessage();
-    }
+    openChat(query);
   };
 
   // ---------- Rendering Lists & Category Chips ----------
   function renderChips() {
     const container = document.getElementById("chipsContainer");
+    if (!container) {
+      renderPlacesChips();
+      return;
+    }
     container.innerHTML = "";
 
     // 'All' Chip
@@ -699,13 +949,10 @@
       places.push(savedPlace);
       
       document.getElementById("addPlaceForm").reset();
-      if (currentMarker) {
-         map.removeLayer(currentMarker);
-         currentMarker = null;
-      }
+      if (map) map.clearPicker();
       renderAll();
       setStatus(`Saved "${name}" successfully.`);
-      switchTab("list");
+      openPlacesOverlay();
       focusLocation(savedPlace);
     } catch (err) {
       console.error("Save failed:", err);
@@ -743,8 +990,17 @@
     chatHistory.scrollTop = chatHistory.scrollHeight;
   }
 
+  function findPlaceById(id) {
+    if (id === null || id === undefined) return null;
+    const strId = String(id);
+    return places.find(p => p.id === id) ||
+           places.find(p => String(p.id) === strId) ||
+           places.find(p => ("place-" + p.id) === strId) ||
+           null;
+  }
+
   window.focusOnCampusSpot = function(id) {
-    const place = places.find(p => p.id === id);
+    const place = findPlaceById(id);
     if (place) {
       focusLocation(place);
     }
@@ -845,7 +1101,7 @@
         await loadPlaces();
       }
 
-      const matched = parsed.matchedId ? places.find(p => p.id === parsed.matchedId) : null;
+      const matched = parsed.matchedId ? findPlaceById(parsed.matchedId) : null;
       appendChatMessage("bot", parsed.reply || "I couldn't find that place yet.", matched);
       if (matched) {
         focusLocation(matched);
@@ -861,6 +1117,30 @@
   function setupEventListeners() {
     // Theme toggle
     document.getElementById("themeToggle").onclick = toggleTheme;
+
+    // Keep the map canvas sized correctly on window/panel changes
+    window.addEventListener("resize", () => {
+      if (map) {
+        clearTimeout(mapResizeTimer);
+        mapResizeTimer = setTimeout(() => map.invalidateSize(), 120);
+      }
+    });
+
+    // Auth forms
+    const loginForm = document.getElementById("loginForm");
+    if (loginForm) {
+      loginForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        handleUserLogin();
+      });
+    }
+    const registerForm = document.getElementById("registerForm");
+    if (registerForm) {
+      registerForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        handleUserRegister();
+      });
+    }
 
     // Search filters in browse tab
     document.getElementById("listSearchInput").addEventListener("input", renderPlacesList);
@@ -878,12 +1158,32 @@
 
 
     // Chat interactions
-    document.getElementById("chatSendBtn").onclick = handleSendMessage;
-    document.getElementById("chatInput").addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
-        handleSendMessage();
-      }
-    });
+    const chatSendBtn = document.getElementById("chatSendBtn");
+    if (chatSendBtn) chatSendBtn.onclick = handleSendMessage;
+    const chatInput = document.getElementById("chatInput");
+    if (chatInput) {
+      chatInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          handleSendMessage();
+        }
+      });
+    }
+    const chatCloseBtn = document.getElementById("chatCloseBtn");
+    if (chatCloseBtn) chatCloseBtn.onclick = closeChat;
+
+    // Places overlay
+    const placesCloseBtn = document.getElementById("placesCloseBtn");
+    if (placesCloseBtn) placesCloseBtn.onclick = closePlacesOverlay;
+
+    // Venue detail sheet
+    const vdClose = document.getElementById("venueDetailClose");
+    if (vdClose) vdClose.onclick = closeVenueDetail;
+    const vdOverlay = document.getElementById("venueDetailOverlay");
+    if (vdOverlay) {
+      vdOverlay.addEventListener("click", (e) => {
+        if (e.target === vdOverlay) closeVenueDetail();
+      });
+    }
 
     // Home search submit click
     const homeSearchBtn = document.getElementById("homeSearchBtn");
@@ -950,51 +1250,29 @@
 
 
   async function drawRoute(startLat, startLng, endLat, endLng, name = "", guideText = "") {
-    if (routingLayer) {
-      routingLayer.clearLayers();
+    if (map) {
+      map.clearRoute();
+      map.clearUser();
+      map.setUser(startLat, startLng);
     }
-    if (userLocationMarker) {
-      map.removeLayer(userLocationMarker);
-    }
-
-    // Place a marker representing your current location
-    userLocationMarker = L.marker([startLat, startLng], {
-      icon: L.divIcon({
-        className: 'user-location-pulse',
-        html: `<div style="width: 14px; height: 14px; background-color: #3b82f6; border: 2px solid white; border-radius: 50%; box-shadow: 0 0 8px #3b82f6; animation: pulse 1.8s infinite;"></div>`,
-        iconSize: [14, 14],
-        iconAnchor: [7, 7]
-      })
-    }).bindPopup("<b>Your Current Location</b>").addTo(map);
 
     try {
       const url = `https://router.project-osrm.org/route/v1/foot/${startLng},${startLat};${endLng},${endLat}?overview=full&geometries=geojson`;
       const res = await fetch(url);
       if (!res.ok) throw new Error("OSRM API error");
       const data = await res.json();
-      
-      if (data.routes && data.routes.length > 0) {
+
+      if (data.routes && data.routes.length > 0 && map) {
         const routeGeoJSON = data.routes[0].geometry;
-        
+
         // Append exact target coordinates to route geometry to avoid "stopping on the road" gap
         if (routeGeoJSON.coordinates) {
           routeGeoJSON.coordinates.push([endLng, endLat]);
         }
 
-        const routePoly = L.geoJSON(routeGeoJSON, {
-          style: {
-            color: "#008751",
-            weight: 5,
-            opacity: 0.85,
-            dashArray: "2, 8",
-            lineCap: "round"
-          }
-        }).addTo(routingLayer);
+        map.drawRouteGeoJSON(routeGeoJSON);
+        map.fitRoute(routeGeoJSON.coordinates);
 
-        // Adjust bounds to fit the route
-        const bounds = routePoly.getBounds().extend([startLat, startLng]);
-        map.fitBounds(bounds, { padding: [50, 50] });
-        
         setStatus("Directions route drawn successfully.");
         if (guideText) {
           speak(`Walking route to ${name} is ready. ${guideText}`);
@@ -1005,14 +1283,11 @@
     } catch (err) {
       console.warn("OSRM routing failed, drawing straight line:", err);
       // Fallback: draw straight dashed line
-      const fallbackLine = L.polyline([[startLat, startLng], [endLat, endLng]], {
-        color: "#EF4444",
-        weight: 4,
-        opacity: 0.8,
-        dashArray: "6, 6"
-      }).addTo(routingLayer);
-      
-      map.fitBounds(fallbackLine.getBounds(), { padding: [50, 50] });
+      if (map) {
+        const coords = [[startLng, startLat], [endLng, endLat]];
+        map.drawRouteLine(coords, "#EF4444");
+        map.fitRoute(coords);
+      }
       setStatus("Offline fallback: straight line path shown.", true);
       if (guideText) {
         speak(`Drawing direct line to ${name}. ${guideText}`);
@@ -1035,5 +1310,26 @@
     if (!str) return "";
     return str.replace(/'/g, "\\\\'").replace(/"/g, '\\\\"');
   }
+
+  // ---------- App bridge for modular view scripts ----------
+  window.App = {
+    get user() { return currentUser; },
+    get places() { return places; },
+    get map() { return map; },
+    switchTab: window.switchTab,
+    openChat,
+    closeChat,
+    openPlacesOverlay,
+    closePlacesOverlay,
+    closeVenueDetail,
+    focusLocation,
+    drawRoute: window.gsuDrawRoute,
+    setStatus,
+    renderAll,
+    renderPlacesList,
+    loadPlaces,
+    focusOnCampusSpot: window.focusOnCampusSpot,
+    addRecentSearch
+  };
 
 })();

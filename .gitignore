@@ -2,3 +2,7 @@
 __pycache__/
 database.json
 *.pyc
+
+# SQLite database (regenerated automatically)
+gsu.db
+gsu.db-journal

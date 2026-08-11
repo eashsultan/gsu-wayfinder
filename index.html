@@ -2,13 +2,23 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>CampusPilot AI — GSU Campus Guide & Navigator</title>
-  <meta name="description" content="Find lecture halls, departments, offices, hostels, clinics, and spots around Gombe State University campus with interactive directions and chat assistance.">
-  
-  <!-- CSS Stylesheets -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
-  <link rel="stylesheet" href="style.css?v=5" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>GSU Navigator AI — Your intelligent guide to Gombe State University</title>
+  <meta name="description" content="Find your classes, discover campus locations, check venue availability, and navigate Gombe State University with AI.">
+
+  <!-- Leaflet (fallback map engine) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+  <!-- Mapbox GL JS (primary map engine, Phase 4) -->
+  <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/v3.7.0/mapbox-gl.css" />
+
+  <!-- Design system -->
+  <link rel="stylesheet" href="css/tokens.css" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/landing.css" />
+  <link rel="stylesheet" href="css/auth.css" />
+  <link rel="stylesheet" href="css/app.css" />
 
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -16,315 +26,792 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 </head>
 <body class="light-mode">
-  <div id="app-container">
-    
-    <!-- Top Nav Header -->
-    <header class="app-header">
-      <div class="brand">
-        <div class="logo-wrapper">
-          <img src="gsu_logo.png" alt="GSU Logo" class="gsu-logo" />
-        </div>
-        <div class="brand-text">
-          <h1>CampusPilot AI</h1>
-          <p>Gombe State University Campus Directory</p>
+
+  <!-- ============================================================
+       LANDING PAGE
+       ============================================================ -->
+  <div id="landing-page" class="landing-page">
+
+    <nav class="lp-nav">
+      <div class="lp-brand">
+        <img src="gsu_logo.png" alt="GSU Logo" />
+        <div>
+          <span class="lp-brand-name">GSU Navigator AI</span>
+          <span class="lp-brand-sub">Campus Intelligence</span>
         </div>
       </div>
-      
-      <div class="nav-controls">
-        <button id="themeToggle" class="control-btn" aria-label="Toggle Theme">
-          <svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
-          <svg class="moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-        </button>
-        <div class="tab-switcher">
-          <button id="tabHome" class="tab-btn active" onclick="switchTab('home')">
-            <span class="btn-text">Home</span>
-          </button>
-          <button id="tabMap" class="tab-btn map-tab-btn" onclick="switchTab('map')">
-            <span class="btn-text">Map</span>
-          </button>
-          <button id="tabChat" class="tab-btn" onclick="switchTab('chat')">
-            <span class="btn-text">Ask AI</span>
-          </button>
-          <button id="tabList" class="tab-btn" onclick="switchTab('list')">
-            <span class="btn-text">Browse</span>
-          </button>
-          <button id="tabAdd" class="tab-btn" onclick="switchTab('add')">
-            <span class="btn-text">Profile</span>
-          </button>
+      <div class="lp-nav-actions">
+        <button class="lp-link-login" onclick="showAuthScreen('login')">Log In</button>
+        <button class="btn btn-primary" onclick="showAuthScreen('register')">Get Started</button>
+      </div>
+    </nav>
+
+    <!-- 1. Hero -->
+    <header class="lp-hero">
+      <div class="lp-hero-copy">
+        <span class="lp-eyebrow">
+          <span class="live-dot"></span>
+          New · AI Campus Assistant
+        </span>
+        <h1>Your intelligent guide to <span class="accent">Gombe&nbsp;State&nbsp;University.</span></h1>
+        <p class="lp-hero-lead">Find your classes, discover campus locations, check venue availability, and navigate GSU with AI.</p>
+        <div class="lp-hero-actions">
+          <button class="btn btn-primary btn-lg" onclick="showAuthScreen('register')">Get Started</button>
+          <button class="btn btn-ghost btn-lg" onclick="showAuthScreen('login')">Explore Campus</button>
+        </div>
+        <div class="lp-hero-stats">
+          <div class="lp-stat">
+            <span class="lp-stat-num"><em id="lp-stat-locations">20+</em></span>
+            <span class="lp-stat-lbl">Campus locations</span>
+          </div>
+          <div class="lp-stat">
+            <span class="lp-stat-num"><em id="lp-stat-venues">12</em></span>
+            <span class="lp-stat-lbl">Lecture venues</span>
+          </div>
+          <div class="lp-stat">
+            <span class="lp-stat-num"><em id="lp-stat-courses">12</em></span>
+            <span class="lp-stat-lbl">Course timetables</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="lp-hero-visual">
+        <div class="lp-ai-bubble">Found <b>LT G2</b> — free from 2:00 PM<span>📍 Walking route ready</span></div>
+        <div class="lp-phone">
+          <div class="lp-phone-screen">
+            <div class="lp-phone-status">
+              <span>9:41</span>
+              <div class="lp-phone-notch"></div>
+              <span>▮▯▮</span>
+            </div>
+            <div class="lp-phone-app">
+              <div>
+                <p class="lp-phone-hello">Good morning 👋</p>
+                <p class="lp-phone-ask">Where do you want to go?</p>
+              </div>
+              <div class="lp-phone-askbar">
+                <span>Ask GSU Navigator...</span>
+                <span class="mic-bubble">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v11m0 0a3 3 0 0 1-3-3V5a3 3 0 0 1 6 0v4a3 3 0 0 1-3 3zm0 0a7 7 0 0 0 7-7h1a8 8 0 0 1-16 0h1a7 7 0 0 0 7 7z"/></svg>
+                </span>
+                <span class="send-bubble">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                </span>
+              </div>
+              <div class="lp-phone-map">
+                <svg viewBox="0 0 260 210" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice" style="width:100%;height:100%;">
+                  <rect width="260" height="210" fill="#eef2f7"/>
+                  <path d="M0 40 L260 20 M0 90 L260 120 M0 150 L260 150" stroke="#ffffff" stroke-width="14" fill="none"/>
+                  <path d="M40 210 L60 60 L140 0 L200 60 L180 210" fill="#dbeafe" stroke="#93c5fd" stroke-width="2"/>
+                  <path d="M120 210 L110 90 L200 40 L240 90 L220 210" fill="#e0e7ff" stroke="#c7d2fe" stroke-width="2"/>
+                  <rect x="120" y="60" width="34" height="22" rx="3" fill="#cbd5e1"/>
+                  <rect x="46" y="96" width="30" height="20" rx="3" fill="#94a3b8"/>
+                  <rect x="170" y="108" width="26" height="18" rx="3" fill="#cbd5e1"/>
+                  <circle cx="200" cy="52" r="7" fill="#16a34a" stroke="#ffffff" stroke-width="2.5"/>
+                  <circle cx="70" cy="150" r="7" fill="#dc2626" stroke="#ffffff" stroke-width="2.5"/>
+                  <circle cx="150" cy="150" r="7" fill="#d97706" stroke="#ffffff" stroke-width="2.5"/>
+                  <circle cx="132" cy="82" r="8" fill="#2563eb" stroke="#ffffff" stroke-width="3">
+                    <animate attributeName="r" values="8;11;8" dur="2s" repeatCount="indefinite"/>
+                  </circle>
+                  <text x="142" y="86" fill="#0f172a" font-size="10" font-family="sans-serif" font-weight="700">You</text>
+                  <text x="208" y="49" fill="#15803d" font-size="8" font-family="sans-serif" font-weight="600">LT G1 · Free</text>
+                  <path d="M92 200 C 110 170, 118 120, 120 92" stroke="#1d4ed8" stroke-width="2" stroke-dasharray="2 6" fill="none"/>
+                </svg>
+              </div>
+              <div class="lp-phone-next">
+                <span class="lp-next-lbl">Next Class</span>
+                <div class="lp-next-course">
+                  CSC 302
+                  <span class="route">Navigate →</span>
+                </div>
+                <p class="lp-next-meta">📍 Lecture Theatre G2 · 🕒 12:00 PM – 2:00 PM</p>
+              </div>
+              <div class="lp-phone-nav">
+                <span class="active"><i class="nv-ic">⌂</i>Home</span>
+                <span><i class="nv-ic">📚</i>Classes</span>
+                <span><i class="nv-ic">🗺</i>Map</span>
+                <span><i class="nv-ic">🏫</i>Venues</span>
+                <span><i class="nv-ic">👤</i>Profile</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </header>
 
-    <!-- Map Viewport -->
-    <section id="map-section">
-      <div id="map"></div>
+    <!-- 2. Capabilities -->
+    <section class="lp-section">
+      <div class="lp-section-head">
+        <h2>What GSU Navigator can do</h2>
+        <p>Everything a student needs to move around and study smarter on campus.</p>
+      </div>
+      <div class="lp-grid-4">
+        <article class="lp-cap">
+          <span class="lp-cap-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
+          </span>
+          <h3>AI Navigation</h3>
+          <p>Ask natural questions like "Where is my next class?" and get accurate directions powered by real GSU records.</p>
+        </article>
+        <article class="lp-cap">
+          <span class="lp-cap-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          </span>
+          <h3>Live Classes</h3>
+          <p>See real-time campus activity and know exactly which lecture halls are running right now.</p>
+        </article>
+        <article class="lp-cap">
+          <span class="lp-cap-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          </span>
+          <h3>Venue Availability</h3>
+          <p>Check which lecture theatres are free or occupied before you plan a study group or event.</p>
+        </article>
+        <article class="lp-cap">
+          <span class="lp-cap-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </span>
+          <h3>Smart Timetables</h3>
+          <p>Personalized weekly schedules that update automatically when class representatives make changes.</p>
+        </article>
+      </div>
     </section>
 
-    <!-- Status Info Bar -->
-    <div id="statusBar" class="status-bar">
-      <span class="status-dot"></span>
-      <span class="status-text" id="statusMessage">Initializing map and campus directory...</span>
-    </div>
-
-    <!-- Interactive Navigation Panel -->
-    <main id="interaction-panel">
-      
-      <!-- Category Quick Filter Chips -->
-      <div class="category-chips-row" id="chipsContainer">
-        <!-- Generated Dynamically -->
+    <!-- 3. How it works -->
+    <section class="lp-section lp-section-soft">
+      <div class="lp-section-head">
+        <h2>How it works</h2>
+        <p>Navigate the entire university complex in four simple steps.</p>
       </div>
-
-      <!-- Content Views -->
-      <div class="view-container">
-        
-        <!-- View 0: Home Page -->
-        <div id="viewHome" class="panel-view active">
-          <!-- Logo & Notification row from screenshot -->
-          <div class="home-brand-row">
-            <div class="brand-left">
-              <img src="gsu_logo.png" alt="GSU Logo" class="home-brand-logo" />
-              <div class="brand-names">
-                <h4>CampusPilot AI</h4>
-                <p>Your AI Guide Around Campus</p>
-              </div>
-            </div>
-            <div class="brand-right">
-              <button class="notification-bell-btn" aria-label="Notifications">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
-              </button>
-            </div>
-          </div>
-
-          <div class="home-hero">
-            <div class="hero-bg-overlay"></div>
-            <div class="hero-content">
-              <h2>Hello! 👋</h2>
-              <h3>Where do you want to go today?</h3>
-              <p>Just type or speak your GSU destination.</p>
-            </div>
-          </div>
-
-          <!-- AI Search Card -->
-          <div class="home-search-card">
-            <div class="search-input-area">
-              <textarea id="homeSearchInput" placeholder="Type or speak your destination..." rows="2"></textarea>
-              <span class="example-text">Example: "Take me to Lecture Theatre 1"</span>
-              <button id="homeSearchBtn" class="send-btn-circle">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
-              </button>
-            </div>
-            <div class="search-actions-row">
-              <div class="left-actions">
-                <button class="icon-action-btn" id="homeMicBtn" title="Speak">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v11m0 0a3 3 0 0 1-3-3V5a3 3 0 0 1 6 0v4a3 3 0 0 1-3 3zm0 0a7 7 0 0 0 7-7h1a8 8 0 0 1-16 0h1a7 7 0 0 0 7 7z"/></svg>
-                </button>
-                <button class="icon-action-btn" title="Keyboard">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect><line x1="6" y1="8" x2="6" y2="8"></line><line x1="10" y1="8" x2="10" y2="8"></line><line x1="14" y1="8" x2="14" y2="8"></line><line x1="18" y1="8" x2="18" y2="8"></line><line x1="6" y1="12" x2="6" y2="12"></line><line x1="10" y1="12" x2="10" y2="12"></line><line x1="14" y1="12" x2="14" y2="12"></line><line x1="18" y1="12" x2="18" y2="12"></line><line x1="7" y1="16" x2="17" y2="16"></line></svg>
-                </button>
-              </div>
-              <div class="smart-mode-badge">
-                <span>✨ Smart Mode</span>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
-              </div>
-            </div>
-          </div>
-
-          <!-- Popular Searches -->
-          <div class="section-container">
-            <div class="section-header">
-              <h4>Popular Searches</h4>
-              <a href="#" onclick="switchTab('list')">See all</a>
-            </div>
-            <div class="popular-grid">
-              <div class="popular-item-card" onclick="window.gsuQuickSearch('Lecture Theatre 1')">
-                <span class="icon">🎓</span>
-                <span class="label">LT1</span>
-              </div>
-              <div class="popular-item-card" onclick="window.gsuQuickSearch('University Central Library')">
-                <span class="icon">📖</span>
-                <span class="label">Central Library</span>
-              </div>
-              <div class="popular-item-card" onclick="window.gsuQuickSearch('Senate Building')">
-                <span class="icon">🏛️</span>
-                <span class="label">Senate Building</span>
-              </div>
-              <div class="popular-item-card" onclick="window.gsuQuickSearch('Faculty of Science Complex')">
-                <span class="icon">🧪</span>
-                <span class="label">Science Complex</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Explore Campus Map Banner -->
-          <div class="explore-map-banner" onclick="switchTab('map')">
-            <div class="banner-text">
-              <h5>Explore Campus Map</h5>
-              <p>Browse campus locations and find places easily.</p>
-              <button class="view-map-btn">View Map 📍</button>
-            </div>
-            <div class="banner-img">
-              <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="1.5" opacity="0.85"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"></polygon><line x1="9" y1="3" x2="9" y2="18"></line><line x1="15" y1="6" x2="15" y2="21"></line></svg>
-            </div>
-          </div>
-
-          <!-- Recent Searches -->
-          <div class="section-container">
-            <div class="section-header">
-              <h4>Recent Searches</h4>
-              <a href="#" onclick="window.gsuClearRecentSearches()">Clear</a>
-            </div>
-            <div class="recent-list" id="homeRecentList">
-              <!-- Dynamically populated recent searches -->
-            </div>
-          </div>
+      <div class="lp-steps">
+        <div class="lp-step">
+          <span class="lp-step-num">1</span>
+          <h4>Ask</h4>
+          <p>Type or speak your request in plain English — "Take me to LT G4."</p>
         </div>
-
-        <!-- View 1: Chat Assistant -->
-        <div id="viewChat" class="panel-view">
-          <div class="chat-wrapper">
-            <div id="chatHistory" class="chat-history">
-              <div class="assistant-welcome">
-                <div class="avatar">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                  </svg>
-                </div>
-                <h3>GSU Campus Guide</h3>
-                <p>Hello! I can help you find lecture halls, offices, hostels, food joints, libraries, or toilets on the Gombe State University campus. Just ask me!</p>
-                <div class="suggestion-bubbles">
-                  <button class="suggest-btn" onclick="sendSuggestion('Where is the Faculty of Science?')">🔍 Faculty of Science</button>
-                  <button class="suggest-btn" onclick="sendSuggestion('Find a lecture theatre')">📖 Lecture Theatres</button>
-                  <button class="suggest-btn" onclick="sendSuggestion('Where can I get lunch?')">🍔 Restaurant / Food</button>
-                  <button class="suggest-btn" onclick="sendSuggestion('Where is the University Library?')">📚 Library</button>
-                </div>
-              </div>
-            </div>
-            <div class="chat-input-bar">
-              <input type="text" id="chatInput" placeholder="Ask e.g. Where is the Senate Building?" autocomplete="off" />
-              <button id="chatSendBtn" aria-label="Send Message">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                  <line x1="22" y1="2" x2="11" y2="13"></line>
-                  <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                </svg>
-              </button>
-            </div>
-          </div>
+        <div class="lp-step">
+          <span class="lp-step-num">2</span>
+          <h4>Understand</h4>
+          <p>The AI matches your intent against official GSU records — never guesses.</p>
         </div>
-
-        <!-- View 2: Browse Locations List -->
-        <div id="viewList" class="panel-view">
-          <div class="search-filter-box">
-            <input type="text" id="listSearchInput" placeholder="Search by name, description, or category..." />
-            <span class="search-icon">🔍</span>
-          </div>
-          <div id="placesList" class="places-list">
-            <!-- Dynamic list items -->
-          </div>
+        <div class="lp-step">
+          <span class="lp-step-num">3</span>
+          <h4>Find</h4>
+          <p>Get exact locations, room statuses, and class times from the database.</p>
         </div>
-
-        <!-- View 3: Add New Place Form -->
-        <div id="viewAdd" class="panel-view">
-          <form id="addPlaceForm" onsubmit="event.preventDefault();">
-            <div class="form-instructions">
-              <strong>Pin a new campus location:</strong> Mark classrooms, laboratories, offices, or student services. Enter details below or select a spot directly on the map.
-            </div>
-            
-            <div class="form-group">
-              <label for="pName">Name / Title <span class="required">*</span></label>
-              <input type="text" id="pName" placeholder="e.g. ETF Lecture Hall 1" required />
-            </div>
-
-            <div class="form-row">
-              <div class="form-group">
-                <label for="pCategory">Category <span class="required">*</span></label>
-                <select id="pCategory" required>
-                  <option value="Lecture Theatre">Lecture Theatre</option>
-                  <option value="Office">Office / Department</option>
-                  <option value="Clinic">Clinic / Health</option>
-                  <option value="Restaurant">Restaurant / Food</option>
-                  <option value="Hostel">Hostel</option>
-                  <option value="Library">Library</option>
-                  <option value="Bank/ATM">Bank / ATM</option>
-                  <option value="Sports">Sports / Rec</option>
-                  <option value="Other">Other Location</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label for="pDesc">Short Description</label>
-              <textarea id="pDesc" rows="2" placeholder="Describe the place or what students can find here..."></textarea>
-            </div>
-
-            <div class="form-group">
-              <label for="pDirections">Directions / How to get there</label>
-              <textarea id="pDirections" rows="2" placeholder="e.g. Next to the Faculty of Science, behind the old lab building..."></textarea>
-            </div>
-
-            <div class="map-picker-status" id="mapPickerStatus">
-              <button type="button" class="pick-map-btn" id="btnPickOnMap">
-                <span>📍 Pick Location on Map</span>
-              </button>
-            </div>
-
-            <div class="form-row coordinates-row">
-              <div class="form-group">
-                <label for="pLat">Latitude <span class="required">*</span></label>
-                <input type="number" step="any" id="pLat" placeholder="10.3042" required />
-              </div>
-              <div class="form-group">
-                <label for="pLng">Longitude <span class="required">*</span></label>
-                <input type="number" step="any" id="pLng" placeholder="11.1728" required />
-              </div>
-            </div>
-
-            <button type="submit" class="submit-btn" id="btnSubmitPlace">
-              <span>Save Place to Campus Directory</span>
-            </button>
-
-            <!-- Collapsible Management Panel -->
-            <details class="manage-details">
-              <summary>Manage Saved Locations</summary>
-              <div class="manage-list" id="manageListContainer">
-                <!-- Dynamically loaded places for deletion/edit -->
-              </div>
-            </details>
-          </form>
+        <div class="lp-step">
+          <span class="lp-step-num">4</span>
+          <h4>Navigate</h4>
+          <p>Follow turn-by-turn walking directions live on the interactive campus map.</p>
         </div>
-
       </div>
-    </main>
+    </section>
 
+    <!-- 4. Live Campus -->
+    <section class="lp-section lp-live">
+      <div class="lp-section-head">
+        <h2>Live Campus</h2>
+        <p>Real venue availability computed from today's timetable — accurate, not staged.</p>
+      </div>
+      <div class="lp-live-grid">
+        <div class="lp-live-card">
+          <div class="lp-live-head">
+            <span class="live-dot" style="background:var(--success);"></span>
+            <h3>Available Venues</h3>
+            <span class="lp-live-count text-success" id="lp-avail-count">–</span>
+          </div>
+          <div id="lp-available-list">
+            <div class="skeleton" style="height:40px;"></div>
+            <div class="skeleton" style="height:40px;margin-top:8px;"></div>
+            <div class="skeleton" style="height:40px;margin-top:8px;"></div>
+          </div>
+        </div>
+        <div class="lp-live-card">
+          <div class="lp-live-head">
+            <span class="live-dot" style="background:var(--danger);"></span>
+            <h3>Occupied Venues</h3>
+            <span class="lp-live-count text-danger" id="lp-occ-count">–</span>
+          </div>
+          <div id="lp-occupied-list">
+            <div class="skeleton" style="height:40px;"></div>
+            <div class="skeleton" style="height:40px;margin-top:8px;"></div>
+          </div>
+        </div>
+        <div class="lp-live-card">
+          <div class="lp-live-head">
+            <span class="live-dot" style="background:var(--warning);"></span>
+            <h3>Upcoming Classes</h3>
+            <span class="lp-live-count text-warning" id="lp-up-count">–</span>
+          </div>
+          <div id="lp-upcoming-list">
+            <div class="skeleton" style="height:40px;"></div>
+            <div class="skeleton" style="height:40px;margin-top:8px;"></div>
+          </div>
+        </div>
+      </div>
+      <p class="lp-live-note">Statuses update continuously and reflect current time and the live timetable.</p>
+    </section>
+
+    <!-- 5 & 6. Roles -->
+    <section class="lp-section">
+      <div class="lp-section-head">
+        <h2>Built for everyone on campus</h2>
+        <p>Simple for students, powerful for class representatives.</p>
+      </div>
+      <div class="lp-roles">
+        <article class="lp-role">
+          <span class="lp-role-ic">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10L12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5"/><path d="M22 10v6"/></svg>
+          </span>
+          <h3>For Students</h3>
+          <p>Never miss another class. Get your next class, exact venue, and walking directions in seconds — just by asking.</p>
+          <ul>
+            <li>Instantly find any campus location or lecture hall</li>
+            <li>Get your next class with venue and route</li>
+            <li>Check live venue availability before you move</li>
+            <li>Voice-powered search on the go</li>
+          </ul>
+        </article>
+        <article class="lp-role">
+          <span class="lp-role-ic">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </span>
+          <h3>For Class Representatives</h3>
+          <p>Manage your group's timetable, book venues, and publish changes that reach every student instantly.</p>
+          <ul>
+            <li>Create and publish class schedules</li>
+            <li>Automatic venue conflict detection</li>
+            <li>Smart alternative venue suggestions</li>
+            <li>Students see updates in real time</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <!-- 7. Final CTA -->
+    <section class="lp-section" style="padding-bottom: 96px;">
+      <div class="lp-final">
+        <h2>Explore GSU with intelligence.</h2>
+        <p>Join hundreds of students and faculty members discovering a smarter way to move around campus.</p>
+        <button class="btn btn-primary btn-lg" onclick="showAuthScreen('register')">Get Started — it's free</button>
+      </div>
+    </section>
+
+    <footer class="lp-foot">
+      <p>© 2026 GSU Navigator AI · Gombe State University</p>
+      <div class="lp-foot-links">
+        <a href="#" onclick="showAuthScreen('login')">Log In</a>
+        <a href="#" onclick="showAuthScreen('register')">Create account</a>
+        <a href="#" onclick="alert('Contact the GSU ICT division for support.')">Support</a>
+      </div>
+    </footer>
   </div>
 
-  <!-- Bottom Navigation Bar for Mobile -->
+  <!-- ============================================================
+       AUTHENTICATION
+       ============================================================ -->
+  <div id="auth-page" class="auth-page" style="display: none;">
+    <div class="auth-shell">
+      <div class="auth-panel">
+        <div class="auth-panel-brand">
+          <img src="gsu_logo.png" alt="GSU Logo" />
+          <h3>GSU Navigator AI</h3>
+        </div>
+        <div class="auth-panel-quote">
+          <p>"It always knows where my next lecture is."</p>
+          <span>— Student, Faculty of Science</span>
+        </div>
+        <div class="auth-panel-status">
+          <span class="live-dot"></span>
+          Live venue availability · 12 venues
+        </div>
+      </div>
+
+      <div class="auth-form-side">
+        <div class="auth-brand-mobile" onclick="showLandingPage()">
+          <img src="gsu_logo.png" alt="GSU Logo" />
+          <h3>GSU Navigator AI</h3>
+        </div>
+
+        <div id="auth-error-banner" class="auth-error-banner"></div>
+
+        <!-- Login -->
+        <div id="login-form-wrap">
+          <div class="auth-head">
+            <h2>Welcome back</h2>
+            <p>Log in to access your map, classes, and timetable.</p>
+          </div>
+          <form id="loginForm" class="auth-form" novalidate>
+            <div class="field">
+              <label for="login_identity">Student ID or Email</label>
+              <input class="input" type="text" id="login_identity" placeholder="e.g. GSU/CSC/21/1001" autocomplete="username" required />
+            </div>
+            <div class="field">
+              <div class="auth-row-label">
+                <label for="login_password">Password</label>
+                <button type="button" class="auth-link" onclick="alert('Please contact the GSU ICT division to reset your password.')">Forgot password?</button>
+              </div>
+              <input class="input" type="password" id="login_password" placeholder="••••••••" autocomplete="current-password" required />
+            </div>
+            <button type="submit" class="btn btn-primary btn-lg btn-block auth-submit">Log In</button>
+            <div class="auth-demo-note">
+              Demo accounts — Student: <b>GSU/CSC/21/1001</b> / <b>student123</b> · Class Rep: <b>aisha.rep@gsu.edu.ng</b> / <b>rep123</b> · Admin: <b>admin@gsu.edu.ng</b> / <b>admin123</b>
+            </div>
+          </form>
+          <p class="auth-switch">Don't have an account? <a href="#" onclick="toggleAuthTab('register')">Sign up</a></p>
+        </div>
+
+        <!-- Register -->
+        <div id="register-form-wrap" style="display: none;">
+          <div class="auth-head">
+            <h2>Create an account</h2>
+            <p>Join as a student or class representative.</p>
+          </div>
+          <form id="registerForm" class="auth-form" novalidate>
+            <div class="field">
+              <label for="reg_name">Full Name</label>
+              <input class="input" type="text" id="reg_name" placeholder="John Doe" autocomplete="name" required />
+            </div>
+            <div class="field-row">
+              <div class="field">
+                <label for="reg_student_id">Student ID</label>
+                <input class="input" type="text" id="reg_student_id" placeholder="GSU/CSC/21/1001" autocomplete="off" required />
+              </div>
+              <div class="field">
+                <label for="reg_email">Email Address</label>
+                <input class="input" type="email" id="reg_email" placeholder="student@gsu.edu.ng" autocomplete="email" required />
+              </div>
+            </div>
+            <div class="field-row">
+              <div class="field">
+                <label for="reg_faculty">Faculty</label>
+                <select class="select" id="reg_faculty" required>
+                  <option value="">Select faculty</option>
+                  <option value="Science">Science</option>
+                  <option value="Arts & Social Sciences">Arts & Social Sciences</option>
+                  <option value="Law">Law</option>
+                  <option value="Pharmaceutical Sciences">Pharmaceutical Sciences</option>
+                  <option value="Education">Education</option>
+                  <option value="Medical Sciences">Medical Sciences</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="reg_dept">Department</label>
+                <input class="input" type="text" id="reg_dept" placeholder="Computer Science" required />
+              </div>
+            </div>
+            <div class="field-row">
+              <div class="field">
+                <label for="reg_level">Level</label>
+                <select class="select" id="reg_level" required>
+                  <option value="100">100 Level</option>
+                  <option value="200">200 Level</option>
+                  <option value="300">300 Level</option>
+                  <option value="400">400 Level</option>
+                  <option value="500">500 Level</option>
+                </select>
+              </div>
+              <div class="auth-type-tabs">
+                <button type="button" class="auth-type-btn active" data-role="student">🎓 Student</button>
+                <button type="button" class="auth-type-btn" data-role="class_rep">📌 Class Rep</button>
+              </div>
+            </div>
+            <input type="hidden" id="reg_role" value="student" />
+            <div class="field">
+              <label for="reg_password">Password</label>
+              <input class="input" type="password" id="reg_password" placeholder="At least 6 characters" autocomplete="new-password" required />
+            </div>
+            <button type="submit" class="btn btn-primary btn-lg btn-block auth-submit">Create Account</button>
+          </form>
+          <p class="auth-switch">Already have an account? <a href="#" onclick="toggleAuthTab('login')">Log In</a></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       MAIN APPLICATION
+       ============================================================ -->
+  <div id="app-container" style="display: none;">
+    <div id="app-shell-root">
+
+      <!-- Top header -->
+      <header class="app-header">
+        <div class="brand">
+          <div class="logo-wrapper">
+            <img src="gsu_logo.png" alt="GSU Logo" class="gsu-logo" />
+          </div>
+          <div class="brand-text">
+            <h1>GSU Navigator AI</h1>
+            <p>Gombe State University Campus Assistant</p>
+          </div>
+        </div>
+        <div class="nav-controls">
+          <button id="themeToggle" class="control-btn" aria-label="Toggle Theme">
+            <svg class="sun-icon" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+            <svg class="moon-icon" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+          </button>
+          <div class="tab-switcher">
+            <button id="tabHome" class="tab-btn active" onclick="switchTab('home')"><span class="btn-text">Home</span></button>
+            <button id="tabClasses" class="tab-btn" onclick="switchTab('classes')"><span class="btn-text">Classes</span></button>
+            <button id="tabMap" class="tab-btn map-tab-btn" onclick="switchTab('map')"><span class="btn-text">Map</span></button>
+            <button id="tabVenues" class="tab-btn" onclick="switchTab('venues')"><span class="btn-text">Venues</span></button>
+            <button id="tabProfile" class="tab-btn" onclick="switchTab('profile')"><span class="btn-text">Profile</span></button>
+          </div>
+        </div>
+      </header>
+
+      <!-- Map viewport -->
+      <section id="map-section">
+        <div id="map"></div>
+        <div class="map-fab-stack">
+          <button id="openPlacesBtn" class="map-fab" onclick="openPlacesOverlay()">
+            <span>📍</span> Places
+          </button>
+        </div>
+        <div class="map-legend">
+          <div class="map-legend-item"><span class="map-legend-dot" style="background:var(--map-user);"></span> You</div>
+          <div class="map-legend-item"><span class="map-legend-dot" style="background:var(--map-available);"></span> Available venue</div>
+          <div class="map-legend-item"><span class="map-legend-dot" style="background:var(--map-occupied);"></span> Occupied venue</div>
+        </div>
+      </section>
+
+      <!-- Status bar -->
+      <div id="statusBar" class="status-bar">
+        <span class="status-dot"></span>
+        <span class="status-text" id="statusMessage">Initializing map and campus directory...</span>
+      </div>
+
+      <!-- Interaction panel -->
+      <main id="interaction-panel">
+        <div class="category-chips-row" id="chipsContainer"><!-- generated --></div>
+        <div class="view-container">
+
+          <!-- HOME -->
+          <section id="viewHome" class="panel-view active">
+            <div class="home-topbar">
+              <div class="brand" onclick="showLandingPage()">
+                <div class="logo-wrapper">
+                  <img src="gsu_logo.png" alt="GSU Logo" class="gsu-logo" />
+                </div>
+                <div class="brand-text">
+                  <h1>GSU Navigator AI</h1>
+                  <p>Gombe State University</p>
+                </div>
+              </div>
+              <button class="icon-btn notification-bell-btn" aria-label="Notifications" onclick="alert('No new notifications today.')">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+              </button>
+            </div>
+
+            <h2 id="homeWelcomeGreeting" class="welcome-title">Good morning 👋</h2>
+            <p class="home-ask">Where do you want to go?</p>
+            <p class="home-ask-sub">Ask GSU Navigator to find classes, venues, and places.</p>
+
+            <!-- AI search -->
+            <div class="home-search-card">
+              <div class="search-input-area">
+                <input type="text" id="homeSearchInput" placeholder="Ask GSU Navigator..." autocomplete="off" aria-label="Ask GSU Navigator" />
+                <button class="icon-action-btn" id="homeMicBtn" title="Speak" aria-label="Voice input">
+                  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v11m0 0a3 3 0 0 1-3-3V5a3 3 0 0 1 6 0v4a3 3 0 0 1-3 3zm0 0a7 7 0 0 0 7-7h1a8 8 0 0 1-16 0h1a7 7 0 0 0 7 7z"/></svg>
+                </button>
+                <button id="homeSearchBtn" class="send-btn-circle" aria-label="Ask">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                </button>
+              </div>
+              <div class="example-prompts-container">
+                <span class="prompt-pill" onclick="window.gsuQuickSearch('Take me to LT G4')">"Take me to LT G4"</span>
+                <span class="prompt-pill" onclick="window.gsuQuickSearch('Where is my next class?')">"Where is my next class?"</span>
+                <span class="prompt-pill" onclick="window.gsuQuickSearch('Is LT G2 free?')">"Is LT G2 free?"</span>
+                <span class="prompt-pill" onclick="window.gsuQuickSearch('Where is the library?')">"Where is the library?"</span>
+              </div>
+            </div>
+
+            <!-- Next class preview (rendered via /api/me/classes) -->
+            <div class="section-container">
+              <h4>Next Class</h4>
+              <div id="homeNextClass" class="next-class-card"><div class="skeleton" style="width:100%;height:84px;"></div></div>
+            </div>
+
+            <!-- Quick actions -->
+            <div class="quick-tiles-grid">
+              <div class="quick-tile" onclick="switchTab('map')"><span class="tile-icon">🗺️</span><span class="tile-label">Map</span></div>
+              <div class="quick-tile" onclick="switchTab('classes')"><span class="tile-icon">📚</span><span class="tile-label">Classes</span></div>
+              <div class="quick-tile" onclick="switchTab('venues')"><span class="tile-icon">🏫</span><span class="tile-label">Venues</span></div>
+            </div>
+
+            <!-- Popular -->
+            <div class="section-container">
+              <div class="section-head">
+                <h3>Popular Searches</h3>
+                <span class="link" onclick="switchTab('map')">Map</span>
+              </div>
+              <div class="popular-grid">
+                <div class="popular-item-card" onclick="window.gsuQuickSearch('Lecture Theatre 1')"><span class="icon">🎓</span><span class="label">LT1</span></div>
+                <div class="popular-item-card" onclick="window.gsuQuickSearch('University Central Library')"><span class="icon">📖</span><span class="label">Central Library</span></div>
+                <div class="popular-item-card" onclick="window.gsuQuickSearch('Senate Building')"><span class="icon">🏛️</span><span class="label">Senate Building</span></div>
+                <div class="popular-item-card" onclick="window.gsuQuickSearch('Faculty of Science Complex')"><span class="icon">🧪</span><span class="label">Science Complex</span></div>
+              </div>
+            </div>
+
+            <!-- Explore map banner -->
+            <div class="explore-map-banner" onclick="switchTab('map')">
+              <div class="banner-text">
+                <h5>Explore Campus Map</h5>
+                <p>Browse campus locations, venues, and live class activity.</p>
+                <button class="view-map-btn">View Map 📍</button>
+              </div>
+              <div class="banner-img">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
+              </div>
+            </div>
+
+            <!-- Recent -->
+            <div class="section-container">
+              <div class="section-head">
+                <h3>Recent Searches</h3>
+                <span class="link" onclick="window.gsuClearRecentSearches()">Clear</span>
+              </div>
+              <div class="recent-list" id="homeRecentList"><!-- dynamic --></div>
+            </div>
+          </section>
+
+          <!-- CLASSES -->
+          <section id="viewClasses" class="panel-view">
+            <div class="view-head">
+              <h2>My Classes</h2>
+              <p id="classesDateLabel" class="view-head-sub">Today's schedule, in real time.</p>
+            </div>
+
+            <div class="section-container">
+              <h4>Today's Classes</h4>
+              <div id="classesTodayList" class="class-list">
+                <div class="skeleton" style="height:88px;"></div>
+                <div class="skeleton" style="height:88px;margin-top:10px;"></div>
+              </div>
+            </div>
+
+            <div class="section-container">
+              <h4>Full Timetable</h4>
+              <div id="classesWeekList" class="class-list"><div class="skeleton" style="height:88px;"></div></div>
+            </div>
+          </section>
+
+          <!-- VENUES -->
+          <section id="viewVenues" class="panel-view">
+            <div class="view-head">
+              <h2>Campus Venues</h2>
+              <p class="view-head-sub">Live availability across GSU lecture theatres and halls.</p>
+            </div>
+
+            <div class="search-filter-box">
+              <input type="text" id="venueSearchInput" placeholder="Search venues..." />
+              <span class="search-icon">🔍</span>
+            </div>
+
+            <div class="filter-chips" id="venueFilterChips">
+              <button class="chip active" data-filter="all">All</button>
+              <button class="chip" data-filter="available">Available</button>
+              <button class="chip" data-filter="occupied">Occupied</button>
+              <button class="chip" data-filter="upcoming">Upcoming</button>
+            </div>
+
+            <div id="venuesList" class="venue-list">
+              <div class="skeleton" style="height:110px;"></div>
+              <div class="skeleton" style="height:110px;margin-top:10px;"></div>
+            </div>
+          </section>
+
+          <!-- PROFILE -->
+          <section id="viewProfile" class="panel-view">
+            <div class="view-head">
+              <h2>Profile</h2>
+              <p class="view-head-sub">Your account and campus management tools.</p>
+            </div>
+            <div class="profile-card">
+              <h3 id="profileName">Loading User...</h3>
+              <span id="profileRoleBadge" class="profile-role-badge">Student</span>
+              <div class="profile-details-list">
+                <div><strong>Student ID</strong><span id="profileID">-</span></div>
+                <div><strong>Email</strong><span id="profileEmail">-</span></div>
+                <div><strong>Faculty</strong><span id="profileFaculty">-</span></div>
+                <div><strong>Department</strong><span id="profileDept">-</span></div>
+                <div><strong>Level</strong><span id="profileLevel">-</span></div>
+              </div>
+              <button class="logout-btn" onclick="handleUserLogout()">Log Out Account</button>
+            </div>
+
+            <!-- Place editor (class reps) -->
+            <div id="classRepPlaceEditor" style="display: none;">
+              <form id="addPlaceForm" class="new-place-form" novalidate>
+                <div class="form-instructions">
+                  <strong>Pin a new campus location:</strong> mark classrooms, laboratories, offices, or student services on the map.
+                </div>
+                <div class="field">
+                  <label for="pName">Name / Title <span class="required">*</span></label>
+                  <input class="input" type="text" id="pName" placeholder="e.g. ETF Lecture Hall 1" />
+                </div>
+                <div class="field">
+                  <label for="pCategory">Category <span class="required">*</span></label>
+                  <select class="select" id="pCategory">
+                    <option value="Lecture Theatre">Lecture Theatre</option>
+                    <option value="Office">Office / Department</option>
+                    <option value="Clinic">Clinic / Health</option>
+                    <option value="Restaurant">Restaurant / Food</option>
+                    <option value="Hostel">Hostel</option>
+                    <option value="Library">Library</option>
+                    <option value="Bank/ATM">Bank / ATM</option>
+                    <option value="Sports">Sports / Rec</option>
+                    <option value="Other">Other Location</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="pDesc">Short Description</label>
+                  <textarea class="textarea" id="pDesc" rows="2" placeholder="Describe the place or what students can find here..."></textarea>
+                </div>
+                <div class="field">
+                  <label for="pDirections">Directions / How to get there</label>
+                  <textarea class="textarea" id="pDirections" rows="2" placeholder="e.g. Next to the Faculty of Science..."></textarea>
+                </div>
+                <div class="map-picker-status">
+                  <button type="button" class="pick-map-btn" id="btnPickOnMap"><span>📍 Pick Location on Map</span></button>
+                </div>
+                <div class="field-row coordinates-row">
+                  <div class="field">
+                    <label for="pLat">Latitude <span class="required">*</span></label>
+                    <input class="input" type="number" step="any" id="pLat" placeholder="10.3042" />
+                  </div>
+                  <div class="field">
+                    <label for="pLng">Longitude <span class="required">*</span></label>
+                    <input class="input" type="number" step="any" id="pLng" placeholder="11.1728" />
+                  </div>
+                </div>
+                <button type="submit" class="submit-btn" id="btnSubmitPlace">Save Place to Campus Directory</button>
+                <details class="manage-details">
+                  <summary>Manage Saved Locations</summary>
+                  <div class="manage-list" id="manageListContainer"><!-- dynamic --></div>
+                </details>
+              </form>
+            </div>
+          </section>
+
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       CHAT OVERLAY
+       ============================================================ -->
+  <section id="viewChat" class="overlay chat-overlay" aria-hidden="true">
+    <div class="overlay-bar">
+      <button id="chatCloseBtn" class="icon-btn" aria-label="Close assistant">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+      <div class="overlay-title">
+        <span>GSU Campus Guide</span>
+        <small>Answers from official GSU records</small>
+      </div>
+      <span class="live-dot"></span>
+    </div>
+    <div class="chat-wrapper">
+      <div id="chatHistory" class="chat-history">
+        <div class="assistant-welcome">
+          <div class="avatar">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          </div>
+          <h3>GSU Campus Guide</h3>
+          <p>Hello! I can find lecture halls, departments, libraries, hostels, and more using official GSU records. I never guess — ask me anything about campus.</p>
+          <div class="suggestion-bubbles">
+            <button class="suggest-btn" onclick="sendSuggestion('Where is my next class?')">📖 My next class</button>
+            <button class="suggest-btn" onclick="sendSuggestion('Take me to LT G4')">🧭 Route to LT G4</button>
+            <button class="suggest-btn" onclick="sendSuggestion('Find a free lecture theatre')">🏫 Free venues</button>
+            <button class="suggest-btn" onclick="sendSuggestion('Where is the University Library?')">📚 Library</button>
+          </div>
+        </div>
+      </div>
+      <div class="chat-input-bar">
+        <input type="text" id="chatInput" placeholder="Ask e.g. Where is the Senate Building?" autocomplete="off" />
+        <button id="chatSendBtn" aria-label="Send Message">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       PLACES OVERLAY
+       ============================================================ -->
+  <section id="viewList" class="overlay places-overlay" aria-hidden="true">
+    <div class="overlay-bar">
+      <button id="placesCloseBtn" class="icon-btn" aria-label="Close places">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+      <div class="overlay-title">
+        <span>Campus Places</span>
+        <small>Offices, services, hostels, and more</small>
+      </div>
+      <span class="chip active" id="placesCountChip">–</span>
+    </div>
+    <div class="places-body">
+      <div class="search-filter-box">
+        <input type="text" id="listSearchInput" placeholder="Search locations..." />
+        <span class="search-icon">🔍</span>
+      </div>
+      <div class="category-chips-row" id="placesChips"><!-- generated --></div>
+      <div id="placesList" class="places-list"><!-- dynamic --></div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       VENUE DETAIL SHEET
+       ============================================================ -->
+  <div id="venueDetailOverlay" class="sheet-backdrop" style="display: none;">
+    <div class="sheet" role="dialog" aria-label="Venue details">
+      <div class="sheet-grabber"></div>
+      <div class="sheet-head">
+        <h3 id="venueDetailName">Venue</h3>
+        <button class="icon-btn" id="venueDetailClose" aria-label="Close">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div id="venueDetailBody" class="sheet-body"><!-- dynamic --></div>
+    </div>
+  </div>
+
+  <!-- Bottom navigation (mobile) -->
   <nav class="bottom-nav">
     <button class="nav-item active" id="btnNavHome" onclick="switchTab('home')">
-      <svg class="nav-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+      <svg class="nav-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
       <span class="nav-label">Home</span>
     </button>
-    <button class="nav-item" id="btnNavMap" onclick="switchTab('map')">
-      <svg class="nav-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 8 3 15 6 23 3 23 18 15 21 8 18 1 21"></polygon><line x1="8" y1="3" x2="8" y2="18"></line><line x1="15" y1="6" x2="15" y2="21"></line></svg>
+    <button class="nav-item" id="btnNavClasses" onclick="switchTab('classes')">
+      <svg class="nav-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+      <span class="nav-label">Classes</span>
+    </button>
+    <button class="nav-item chat-nav-btn" id="btnNavMap" onclick="switchTab('map')">
+      <div class="nav-icon-circle">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 8 3 15 6 23 3 23 18 15 21 8 18 1 21"/><line x1="8" y1="3" x2="8" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
+      </div>
       <span class="nav-label">Map</span>
     </button>
-    <button class="nav-item chat-nav-btn" id="btnNavChat" onclick="switchTab('chat')">
-      <div class="nav-icon-circle">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
-      </div>
-      <span class="nav-label">Ask AI</span>
+    <button class="nav-item" id="btnNavVenues" onclick="switchTab('venues')">
+      <svg class="nav-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M4 21V10l8-6 8 6v11M9 9v1m6-1v1M9 21v-6h6v6"/></svg>
+      <span class="nav-label">Venues</span>
     </button>
-    <button class="nav-item" id="btnNavList" onclick="switchTab('list')">
-      <svg class="nav-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-      <span class="nav-label">Locations</span>
-    </button>
-    <button class="nav-item" id="btnNavAdd" onclick="switchTab('add')">
-      <svg class="nav-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+    <button class="nav-item" id="btnNavProfile" onclick="switchTab('profile')">
+      <svg class="nav-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
       <span class="nav-label">Profile</span>
     </button>
   </nav>
 
-  <!-- Leaflet and App Scripts -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
-  <script src="app.js?v=5"></script>
+  <!-- Scripts -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://api.mapbox.com/mapbox-gl-js/v3.7.0/mapbox-gl.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/map-engine.js?v=4"></script>
+  <script src="js/landing.js"></script>
+  <script src="app.js?v=11"></script>
+  <script src="js/views.js?v=1"></script>
 </body>
 </html>

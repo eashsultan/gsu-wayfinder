@@ -1,0 +1,117 @@
+/* ============================================================
+   GSU Navigator AI — Design Tokens
+   Brand: calm blue / navy, white surfaces, minimal product UI
+   ============================================================ */
+
+:root {
+  /* Primary (blue / navy) */
+  --primary: #2563eb;
+  --primary-strong: #1d4ed8;
+  --primary-deep: #1e3a8a;
+  --primary-ink: #0f2745;
+  --primary-soft: #eff6ff;
+  --primary-mist: #dbeafe;
+
+  /* Semantics */
+  --success: #16a34a;
+  --success-strong: #15803d;
+  --success-soft: #f0fdf4;
+  --danger: #dc2626;
+  --danger-strong: #b91c1c;
+  --danger-soft: #fef2f2;
+  --warning: #d97706;
+  --warning-soft: #fffbeb;
+  --info: #0891b2;
+  --info-soft: #ecfeff;
+
+  /* Map markers */
+  --map-user: #2563eb;
+  --map-available: #16a34a;
+  --map-occupied: #dc2626;
+  --map-upcoming: #d97706;
+  --map-landmark: #1e3a8a;
+
+  /* Surfaces */
+  --bg: #ffffff;
+  --bg-soft: #f8fafc;
+  --bg-subtle: #f1f5f9;
+  --bg-inverse: #0f172a;
+  --card: #ffffff;
+  --card-soft: #f8fafc;
+
+  /* Text */
+  --text: #0f172a;
+  --text-strong: #0b1220;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+  --text-faint: #94a3b8;
+  --text-inverse: #ffffff;
+
+  /* Borders */
+  --border: #e2e8f0;
+  --border-strong: #cbd5e1;
+
+  /* Elevation */
+  --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.05), 0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 4px 16px rgba(15, 23, 42, 0.08);
+  --shadow-lg: 0 16px 40px rgba(15, 23, 42, 0.12);
+
+  /* Radius */
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --r-xl: 24px;
+  --r-full: 999px;
+
+  /* Typography */
+  --font-display: 'Outfit', 'Plus Jakarta Sans', sans-serif;
+  --font-body: 'Plus Jakarta Sans', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  --transition: 0.2s ease;
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Layout */
+  --nav-h: 64px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Dark mode — optional, calm navy */
+.dark-mode {
+  --primary: #3b82f6;
+  --primary-strong: #60a5fa;
+  --primary-soft: rgba(59, 130, 246, 0.14);
+  --primary-mist: rgba(59, 130, 246, 0.22);
+
+  --success: #34d399;
+  --success-soft: rgba(16, 185, 129, 0.14);
+  --danger: #f87171;
+  --danger-soft: rgba(239, 68, 68, 0.14);
+  --warning: #fbbf24;
+  --warning-soft: rgba(245, 158, 11, 0.14);
+  --info: #22d3ee;
+  --info-soft: rgba(6, 182, 212, 0.14);
+
+  --bg: #0b1220;
+  --bg-soft: #0f172a;
+  --bg-subtle: #16213a;
+  --bg-inverse: #e2e8f0;
+  --card: #101a2e;
+  --card-soft: #0f172a;
+
+  --text: #e2e8f0;
+  --text-strong: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
+  --text-faint: #64748b;
+  --text-inverse: #0f172a;
+
+  --border: rgba(148, 163, 184, 0.18);
+  --border-strong: rgba(148, 163, 184, 0.32);
+
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.6);
+}
